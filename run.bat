@@ -13,6 +13,7 @@ set EXP_NAME_3=stage3
 REM 获取项目目录
 set PROJECT_DIR=%CD%
 set DATA_PATH=%PROJECT_DIR%\data
+set ENV_PATH=%PROJECT_DIR%\envs
 set MAMBA=%PROJECT_DIR%\micromamba.exe
 set CUDA_DIR="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8"
 set BLENDER_DIR="C:\Program Files\Blender Foundation\Blender 3.6"

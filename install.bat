@@ -4,6 +4,7 @@ setlocal enabledelayedexpansion
 REM 环境变量设置（去掉引号，全部为目录，不带可执行文件名）
 set PROJECT_DIR=%CD%
 set DATA_PATH=%PROJECT_DIR%\data
+set ENV_PATH=%PROJECT_DIR%\envs
 set MAMBA=%PROJECT_DIR%\micromamba.exe
 set CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
@@ -130,10 +131,8 @@ if "%1"=="TEST" (
     echo 模拟完成：环境创建
 ) else (
     cd %PROJECT_DIR%
-    %MAMBA% create -f environment.yml
-    %MAMBA% shell init -s cmd.exe
-    call %USERPROFILE%\.micromamba\micromambarc.cmd
-    %MAMBA% activate gaussian_splatting_hair
+    %MAMBA% create -p %PROJECT_DIR%\envs\gaussian_splatting_hair -f environment.yml
+    %MAMBA% activate %PROJECT_DIR%\envs\gaussian_splatting_hair
 )
 
 REM 下载Neural Haircut文件
@@ -164,8 +163,8 @@ if "%1"=="TEST" (
     echo 测试模式：模拟设置Matte-Anything环境...
     echo 模拟完成：Matte-Anything环境设置
 ) else (
-    %MAMBA% create -n matte_anything -c pytorch -c nvidia -c conda-forge pytorch=2.0.0 pytorch-cuda=11.8 torchvision tensorboard timm=0.5.4 opencv=4.5.3 mkl=2024.0 setuptools=58.2.0 easydict wget scikit-image gradio=3.46.1 fairscale
-    %MAMBA% activate matte_anything
+    %MAMBA% create -p %PROJECT_DIR%\envs\matte_anything -c pytorch -c nvidia -c conda-forge pytorch=2.0.0 pytorch-cuda=11.8 torchvision tensorboard timm=0.5.4 opencv=4.5.3 mkl=2024.0 setuptools=58.2.0 easydict wget scikit-image gradio=3.46.1 fairscale
+    %MAMBA% activate %PROJECT_DIR%\envs\matte_anything
     pip install git+https://github.com/facebookresearch/segment-anything.git
     python -m pip install git+https://github.com/facebookresearch/detectron2.git
     cd %PROJECT_DIR%\ext\Matte-Anything\GroundingDINO && pip install -e .
@@ -190,8 +189,8 @@ if "%1"=="TEST" (
     tar -xvzf models.tar.gz
     del models.tar.gz
     git submodule update --init --recursive --remote
-    %MAMBA% create -n openpose -c conda-forge cmake=3.20
-    %MAMBA% activate openpose
+    %MAMBA% create -p %PROJECT_DIR%\envs\openpose -c conda-forge cmake=3.20
+    %MAMBA% activate %PROJECT_DIR%\envs\openpose
     mkdir build
     cd build
     cmake .. -DBUILD_PYTHON=true -DUSE_CUDNN=off
@@ -207,8 +206,8 @@ if "%1"=="TEST" (
     cd %PROJECT_DIR%\ext && git clone https://github.com/yfeng95/PIXIE
     cd %PROJECT_DIR%\ext\PIXIE
     powershell -Command "& {Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/yfeng95/PIXIE/master/fetch_model.sh' -OutFile 'fetch_model.ps1'; (Get-Content 'fetch_model.ps1') -replace 'wget', 'curl -LO' | Set-Content 'fetch_model.ps1'; ./fetch_model.ps1}"
-    %MAMBA% create -n pixie-env -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d python=3.8 pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 fvcore pytorch3d==0.7.5 kornia matplotlib
-    %MAMBA% activate pixie-env
+    %MAMBA% create -p %PROJECT_DIR%\envs\pixie-env -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d python=3.8 pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.8 fvcore pytorch3d==0.7.5 kornia matplotlib
+    %MAMBA% activate %PROJECT_DIR%\envs\pixie-env
     pip install pyyaml==5.4.1
     pip install git+https://github.com/1adrianb/face-alignment.git@54623537fd9618ca7c15688fd85aba706ad92b59
 )
