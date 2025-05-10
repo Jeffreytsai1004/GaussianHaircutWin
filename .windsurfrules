@@ -1,0 +1,10 @@
+Gaussian Haircut
+- 先了解该项目：@README.md ，
+- https://eth-ait.github.io/GaussianHaircut/， use context7 ;
+- 把这个项目改成WIndows的项目
+- 新建两个bat文件：install.bat 和 run.bat
+- 安装部署的时候验证必须的软件是否正确安装，如果没有，则帮助下载安装
+- 用@micromamba.exe 来创建和管理虚拟环境
+- 重写Readme,用中文，并标注所需要安装的软件如：Blender, CMake，CUDA, Colmap（https://github.com/colmap/colmap/releases），
+- 注意环境变量要设置正确
+- 文件修改完成后则用命令行运行测试，并修正Bug，不要随意新建文件导致混乱
