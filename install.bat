@@ -10,9 +10,10 @@ set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
 set COLMAP_DIR=C:\Colmap\bin
 set CMAKE_DIR=C:\Program Files\CMake\bin
 set GIT_DIR=C:\Program Files\Git\bin
+set VCVARS_DIR=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build
 
 REM 添加所有依赖到PATH
-set PATH=%PATH%;%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PROJECT_DIR%
+set PATH=%PATH%;%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%VCVARS_DIR%;%PROJECT_DIR%
 
 REM 确保gdown可用
 pip install -U gdown
