@@ -14,7 +14,7 @@ set "BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6"
 set "COLMAP_DIR=C:\Colmap\bin"
 set "CMAKE_DIR=C:\Program Files\CMake\bin"
 set "GIT_DIR=C:\Program Files\Git\bin"
-set "VCVARS_DIR=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build"
+set "VCVARS_DIR=D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
 
 REM 添加必要的路径到 PATH
 set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
