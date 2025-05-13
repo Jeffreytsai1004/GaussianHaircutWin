@@ -24,9 +24,30 @@ echo #####################
 echo ##### 环境初始化 #####
 echo #####################
 
+REM 检查micromamba是否存在
+if not exist "%MAMBA%" (
+    echo 错误：找不到micromamba.exe！
+    echo 请从https://github.com/mamba-org/micromamba-releases/releases下载
+    echo 并将其重命名为micromamba.exe放在项目根目录
+    pause
+    exit /b 1
+)
+
 REM 初始化 micromamba shell hook
+echo 正在初始化micromamba环境...
 call %MAMBA% shell init -s cmd.exe -p "%PROJECT_DIR%\micromamba_shell" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo 错误：micromamba初始化失败！
+    pause
+    exit /b 1
+)
 call "%PROJECT_DIR%\micromamba_shell\etc\profile.d\micromamba_hook.bat"
+if %ERRORLEVEL% NEQ 0 (
+    echo 错误：无法加载micromamba hook脚本！
+    pause
+    exit /b 1
+)
+echo micromamba环境初始化成功！
 
 REM 创建主环境
 call %MAMBA% create -p "%ENV_PATH%\gaussian_splatting_hair" -n gaussian_splatting_hair -f environment.yml -y
