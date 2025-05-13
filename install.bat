@@ -2,9 +2,9 @@
 setlocal enabledelayedexpansion
 
 echo.
-echo ######################
-echo ##### 环境变量设置 #####
-echo ######################
+echo ==============================
+echo ========= 环境变量设置 =========
+echo ==============================
 set "PROJECT_DIR=%CD%"
 set "DATA_PATH=%PROJECT_DIR%\data"
 set "ENV_PATH=%PROJECT_DIR%\envs"
@@ -20,9 +20,9 @@ REM 添加必要的路径到 PATH
 set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
 
 echo.
-echo #####################
-echo ##### 环境初始化 #####
-echo #####################
+echo ==============================
+echo ========== 环境初始化 ==========
+echo ==============================
 
 REM 检查micromamba是否存在
 if not exist "%MAMBA%" (
@@ -95,9 +95,9 @@ call %MAMBA% deactivate
 call %MAMBA% activate gaussian_splatting_hair
 
 echo.
-echo ###############################
-echo ##### 克隆代码库和第三方依赖 #####
-echo ###############################
+echo =============================
+echo ==== 克隆代码库和第三方依赖 ====
+echo =============================
 
 if not exist "%PROJECT_DIR%\ext" mkdir "%PROJECT_DIR%\ext"
 cd /d "%PROJECT_DIR%\ext"
@@ -167,9 +167,9 @@ echo 代码和依赖库克隆完成
 @REM pip install -e ext/kaolin
 
 echo.
-echo ########################
-echo ##### 下载预训练模型 #####
-echo ########################
+echo ==========================
+echo ====== 下载预训练模型 ======
+echo ==========================
 
 cd "%PROJECT_DIR%\ext\NeuralHaircut"
 pip install gdown
@@ -187,9 +187,9 @@ gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
 cd "%PROJECT_DIR%"
 
 echo.
-echo ##########################
-echo ##### Matte-Anything #####
-echo ##########################
+echo ==========================
+echo ===== Matte-Anything =====
+echo ==========================
 REM 切换至 matte_anything 虚拟环境
 call %MAMBA% deactivate
 call %MAMBA% activate matte_anything
@@ -255,9 +255,9 @@ call %MAMBA% deactivate
 call %MAMBA% activate gaussian_splatting_hair
 
 echo.
-echo ######################
-echo ##### 安装本地依赖 #####
-echo ######################
+echo ==============================
+echo ========= 安装本地依赖 =========
+echo ==============================
 cd "%PROJECT_DIR%"
 pip install -e ext/pytorch3d
 pip install -e ext/NeuralHaircut/npbgpp
@@ -266,7 +266,7 @@ pip install -e ext/diff_gaussian_rasterization_hair
 pip install -e ext/kaolin
 
 echo.
-echo ##################################
-echo #### 安装完成，请确认所有步骤无误 ####
-echo ##################################
+echo ==================================
+echo ==== 安装完成，请确认所有步骤无误 ====
+echo ==================================
 pause

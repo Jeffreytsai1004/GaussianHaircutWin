@@ -12,6 +12,9 @@ ext/PIXIE
 ext/hyperIQA
 ext/simple-knn
 
+# micromamba
+micromamba_shell
+
 # Visual Studio Code files
 .vscode
 
