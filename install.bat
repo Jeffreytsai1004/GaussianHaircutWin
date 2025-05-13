@@ -2,9 +2,8 @@
 setlocal enabledelayedexpansion
 
 echo.
-echo ==============================
 echo ========= 环境变量设置 =========
-echo ==============================
+
 set "PROJECT_DIR=%CD%"
 set "DATA_PATH=%PROJECT_DIR%\data"
 set "ENV_PATH=%PROJECT_DIR%\envs"
@@ -20,9 +19,7 @@ REM 添加必要的路径到 PATH
 set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
 
 echo.
-echo ==============================
 echo ========== 环境初始化 ==========
-echo ==============================
 
 REM 检查micromamba是否存在
 if not exist "%MAMBA%" (
@@ -33,28 +30,17 @@ if not exist "%MAMBA%" (
     exit /b 1
 )
 
-REM 初始化 micromamba shell hook
+REM 设置 micromamba 环境变量
 echo 正在初始化micromamba环境...
-call %MAMBA% shell init -s cmd.exe -p "%PROJECT_DIR%\micromamba_shell" >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo 错误：micromamba初始化失败！
-    pause
-    exit /b 1
-)
-call "%PROJECT_DIR%\micromamba_shell\etc\profile.d\micromamba_hook.bat"
-if %ERRORLEVEL% NEQ 0 (
-    echo 错误：无法加载micromamba hook脚本！
-    pause
-    exit /b 1
-)
+set "MAMBA_ROOT_PREFIX=%ENV_PATH%"
+set "MAMBA_NO_PROMPT=1"
 echo micromamba环境初始化成功！
 
 REM 创建主环境
-call %MAMBA% create -p "%ENV_PATH%\gaussian_splatting_hair" -n gaussian_splatting_hair -f environment.yml -y
-call %MAMBA% activate gaussian_splatting_hair
-python -m pip install --upgrade pip
-pip install gdown
-pip install -r requirements.txt
+call %MAMBA% create -p "%ENV_PATH%\gaussian_splatting_hair" -f environment.yml -y
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install --upgrade pip
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install gdown
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -r requirements.txt
 
 REM 检查colmap是否可用，如果不可用给出提示
 where colmap >nul 2>&1
@@ -66,38 +52,26 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 REM 创建Matte-Anything环境
-call %MAMBA% deactivate
-call %MAMBA% create -p "%ENV_PATH%\matte_anything" -n matte_anything -c pytorch -c nvidia -c conda-forge ^
+call %MAMBA% create -p "%ENV_PATH%\matte_anything" -c pytorch -c nvidia -c conda-forge ^
     pytorch=2.0.0 pytorch-cuda=11.8 torchvision tensorboard timm=0.5.4 opencv=4.5.3 ^
     mkl=2024.0 setuptools=58.2.0 easydict wget scikit-image gradio=3.46.1 fairscale -y
-call %MAMBA% activate matte_anything
-python -m pip install --upgrade pip
-pip install gdown
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install --upgrade pip
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install gdown
 
 REM 创建OpenPose环境
-call %MAMBA% deactivate
-call %MAMBA% create -p "%ENV_PATH%\openpose" -n openpose -c conda-forge cmake=3.20 -y
-call %MAMBA% activate openpose
-python -m pip install --upgrade pip
-pip install gdown
+call %MAMBA% create -p "%ENV_PATH%\openpose" -c conda-forge cmake=3.20 -y
+call %MAMBA% run -p "%ENV_PATH%\openpose" pip install --upgrade pip
+call %MAMBA% run -p "%ENV_PATH%\openpose" pip install gdown
 
 REM 创建PIXIE环境
-call %MAMBA% deactivate
-call %MAMBA% create -p "%ENV_PATH%\pixie" -n pixie -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d ^
+call %MAMBA% create -p "%ENV_PATH%\pixie" -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d ^
     python=3.8 pytorch=2.0.0 torchvision=0.15.0 torchaudio=2.0.0 pytorch-cuda=11.8 fvcore pytorch3d=0.7.5 kornia matplotlib pyyaml==5.4.1 -y
-call %MAMBA% activate pixie
-python -m pip install --upgrade pip
-pip install gdown
-pip install face-alignment
-
-REM 切换回主环境
-call %MAMBA% deactivate
-call %MAMBA% activate gaussian_splatting_hair
+call %MAMBA% run -p "%ENV_PATH%\pixie" pip install --upgrade pip
+call %MAMBA% run -p "%ENV_PATH%\pixie" pip install gdown
+call %MAMBA% run -p "%ENV_PATH%\pixie" pip install face-alignment
 
 echo.
-echo =============================
 echo ==== 克隆代码库和第三方依赖 ====
-echo =============================
 
 if not exist "%PROJECT_DIR%\ext" mkdir "%PROJECT_DIR%\ext"
 cd /d "%PROJECT_DIR%\ext"
@@ -153,70 +127,47 @@ git clone https://github.com/Jeffreytsai1004/PIXIE
 cd "%PROJECT_DIR%"
 echo 代码和依赖库克隆完成
 
-@REM echo.
-@REM echo ==== 安装本地依赖 ====
-
-@REM cd /d "%PROJECT_DIR%"
-@REM call %MAMBA% activate gaussian_splatting_hair
-
-@REM REM 安装本地依赖
-@REM pip install -e ext/pytorch3d
-@REM pip install -e ext/NeuralHaircut/npbgpp
-@REM pip install -e ext/simple-knn
-@REM pip install -e ext/diff_gaussian_rasterization_hair
-@REM pip install -e ext/kaolin
-
 echo.
-echo ==========================
-echo ====== 下载预训练模型 ====== 
-echo ==========================
+echo ====== 下载预训练模型 ======
 
 cd "%PROJECT_DIR%\ext\NeuralHaircut"
-pip install gdown
-gdown --folder https://drive.google.com/drive/folders/1TCdJ0CKR3Q6LviovndOkJaKm8S1T9F_8
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install gdown
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" gdown --folder https://drive.google.com/drive/folders/1TCdJ0CKR3Q6LviovndOkJaKm8S1T9F_8
 cd "%PROJECT_DIR%\ext\NeuralHaircut\pretrained_models\diffusion_prior"
-gdown 1_9EOUXHayKiGH5nkrayncln3d6m1uV7f
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" gdown 1_9EOUXHayKiGH5nkrayncln3d6m1uV7f
 cd "%PROJECT_DIR%\ext\NeuralHaircut\PIXIE"
-gdown 1mPcGu62YPc4MdkT8FFiOCP629xsENHZf
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" gdown 1mPcGu62YPc4MdkT8FFiOCP629xsENHZf
 tar -xvzf pixie_data.tar.gz
 del pixie_data.tar.gz
 cd "%PROJECT_DIR%\ext\hyperIQA"
 if not exist pretrained mkdir pretrained
 cd "%PROJECT_DIR%\ext\hyperIQA\pretrained"
-gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
 cd "%PROJECT_DIR%"
 
 echo.
-echo ==========================
 echo ===== Matte-Anything =====
-echo ==========================
-REM 切换至 matte_anything 虚拟环境
-call %MAMBA% deactivate
-call %MAMBA% activate matte_anything
+
 REM 安装 segment-anything, detectron2 和 GroundingDINO
 cd "%PROJECT_DIR%\ext\Matte-Anything\segment-anything"
-pip install -e .
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install -e .
 cd "%PROJECT_DIR%\ext\Matte-Anything\detectron2"
-pip install -e .
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install -e .
 cd "%PROJECT_DIR%\ext\Matte-Anything\GroundingDINO"
-pip install -e .
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install -e .
 cd "%PROJECT_DIR%\ext\Matte-Anything"
-pip install supervision==0.22.0
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" pip install supervision==0.22.0
 
 REM 下载模型文件
 if not exist pretrained mkdir pretrained
 cd pretrained
 powershell -Command "Invoke-WebRequest -Uri 'https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth' -OutFile 'sam_vit_h_4b8939.pth'"
 powershell -Command "Invoke-WebRequest -Uri 'https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth' -OutFile 'groundingdino_swint_ogc.pth'"
-gdown 1d97oKuITCeWgai2Tf3iNilt6rMSSYzkW
-call %MAMBA% deactivate
-call %MAMBA% activate gaussian_splatting_hair
+call %MAMBA% run -p "%ENV_PATH%\matte_anything" gdown 1d97oKuITCeWgai2Tf3iNilt6rMSSYzkW
 
 REM 下载openpose模型
 cd "%PROJECT_DIR%\ext\openpose"
-call %MAMBA% deactivate
-call %MAMBA% activate openpose
-powershell -Command "Invoke-WebRequest -Uri 'https://drive.google.com/uc?export=download&id=1Yn03cKKfVOq4qXmgBMQD20UMRRRkd_tV' -OutFile 'models.tar.gz'"
+call %MAMBA% run -p "%ENV_PATH%\openpose" powershell -Command "Invoke-WebRequest -Uri 'https://drive.google.com/uc?export=download&id=1Yn03cKKfVOq4qXmgBMQD20UMRRRkd_tV' -OutFile 'models.tar.gz'"
 tar -xvzf models.tar.gz
 del models.tar.gz
 
@@ -230,8 +181,6 @@ cmake .. -DBUILD_PYTHON=true -DUSE_CUDNN=OFF -G "Visual Studio 17 2022" -A x64
 cmake --build . --config Release
 
 REM PIXIE
-call %MAMBA% deactivate
-call %MAMBA% activate pixie
 REM 下载PIXIE模型
 cd "%PROJECT_DIR%\ext\PIXIE"
 if exist fetch_model.bat (
@@ -251,22 +200,17 @@ if exist fetch_model.bat (
 )
 
 REM 切换回主环境，安装本地依赖
-call %MAMBA% deactivate
-call %MAMBA% activate gaussian_splatting_hair
-
 echo.
-echo ==============================
 echo ========= 安装本地依赖 =========
-echo ==============================
+
 cd "%PROJECT_DIR%"
-pip install -e ext/pytorch3d
-pip install -e ext/NeuralHaircut/npbgpp
-pip install -e ext/simple-knn
-pip install -e ext/diff_gaussian_rasterization_hair
-pip install -e ext/kaolin
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -e ext/pytorch3d
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -e ext/NeuralHaircut/npbgpp
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -e ext/simple-knn
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -e ext/diff_gaussian_rasterization_hair
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" pip install -e ext/kaolin
 
 echo.
-echo ==================================
 echo ==== 安装完成，请确认所有步骤无误 ====
-echo ==================================
+
 pause
