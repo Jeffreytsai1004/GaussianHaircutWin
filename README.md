@@ -1,146 +1,186 @@
-# Gaussian Haircut: 使用链条对齐的3D高斯体进行人物头发重建
+# GaussianHaircut
 
-[**论文**](https://arxiv.org/abs/2409.14778) | [**项目主页**](https://eth-ait.github.io/GaussianHaircut/)
+[English](README_EN.md) | 中文
 
-本仓库包含Gaussian Haircut的Windows实现，这是一种基于链条的头发重建方法，适用于单目视频。
+## 项目简介
+
+GaussianHaircut 是一个用于高质量头发建模和渲染的项目，基于 3D 高斯点云技术。该项目由 ETH Zurich 的 AIT 实验室开发。
+
+项目官方网站:[GaussianHaircut](https://eth-ait.github.io/GaussianHaircut/)
+GitHub 仓库:[GaussianHaircut](https://github.com/eth-ait/GaussianHaircut)
+白皮书:[GaussianHaircut](https://arxiv.org/abs/2409.00437)
+项目主页:[GaussianHaircut](https://haiminluo.github.io/gaussianhair/)
+
+## 系统要求
+
+- Windows 10 或 Windows 11
+- NVIDIA GPU (支持 CUDA 11.8)
+- 至少 16GB RAM
+- 至少 10GB 磁盘空间
 
 ## 必要软件
 
-在开始之前，请确保您的系统已安装以下软件：
+在运行 GaussianHaircut 之前，请确保安装以下软件:
 
 1. **CUDA 11.8**
+   - 下载链接:[https://developer.nvidia.com/cuda-11-8-0-download-archive](https://developer.nvidia.com/cuda-11-8-0-download-archive)
+   - 默认安装路径:`C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8`
 
-   从 [NVIDIA官方网站](https://developer.nvidia.com/cuda-11-8-0-download-archive) 下载并安装CUDA 11.8。
+2. **Blender 3.6**
+   - 下载链接:[https://www.blender.org/download/](https://www.blender.org/download/)
+   - 默认安装路径:`C:\Program Files\Blender Foundation\Blender 3.6`
 
-   请确保：
-   - PATH环境变量包含`<CUDA安装目录>\bin`
-   - 环境变量中CUDA可以被正确访问
+3. **COLMAP**
+   - 下载链接:[https://github.com/colmap/colmap/releases](https://github.com/colmap/colmap/releases)
+   - 建议安装路径:`C:\Colmap`
 
-   本项目仅使用此CUDA版本进行过测试。
-
-2. **Blender 3.6**（用于创建发丝可视化）
-
-   从 [Blender官方网站](https://www.blender.org/download/lts/3-6) 下载并安装Blender 3.6。
-   
-   安装后请将Blender的安装目录添加到PATH环境变量中，以便能够在命令行中直接调用`blender`命令。
-
-3. **CMake**
-
-   从 [CMake官方网站](https://cmake.org/download/) 下载并安装CMake。
-   
-   安装时请选择"将CMake添加到系统PATH"选项。
-
-4. **COLMAP**
-
-   从 [COLMAP的GitHub发布页](https://github.com/colmap/colmap/releases) 下载并安装COLMAP。
-
-   colmap-x64-windows-cuda.zip/colmap-x64-windows-nocuda.zip 解压放到"C:\Colmap", 并将"C:\Colmap\bin"添加到环境变量
-   
-   安装后请将COLMAP的安装目录添加到PATH环境变量中。
+4. **CMake**
+   - 下载链接:[https://cmake.org/download/](https://cmake.org/download/)
+   - 默认安装路径:`C:\Program Files\CMake`
 
 5. **Git**
+   - 下载链接:[https://git-scm.com/download/win](https://git-scm.com/download/win)
+   - 默认安装路径:`C:\Program Files\Git`
 
-   从 [Git官方网站](https://git-scm.com/download/win) 下载并安装Git。
+6. **Visual Studio 2022**
+   - 下载链接:[https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
+   - 确保安装 "使用 C++ 的桌面开发" 工作负载
 
 ## 安装步骤
 
-1. **克隆仓库**
-
-   ```bash
+1. 克隆仓库:
+   ```
    git clone https://github.com/eth-ait/GaussianHaircut.git
    cd GaussianHaircut
    ```
 
-2. **运行安装脚本**
-
-   ```bash
+2. 运行安装脚本:
+   ```
    install.bat
    ```
-
-   此脚本将：
+   
+   此脚本将:
    - 检查必要软件是否已安装
-   - 克隆所需的外部库
-   - 使用micromamba创建和配置所需的环境
-   - 下载预训练模型和其他必要文件
+   - 下载 micromamba 用于环境管理
+   - 创建 Python 虚拟环境
+   - 安装所有依赖项
+   - 编译 CUDA 扩展
 
-## 重建步骤
+## 使用方法
 
-1. **录制单目视频**
+1. 准备数据:
+   - 将您的数据放在 `data` 目录下的子文件夹中
 
-   请参考项目页面上的示例，并尽量减少运动模糊。
-
-2. **设置场景目录**
-
-   创建一个新目录用于存储重建场景，并将视频文件放入其中，命名为`raw.mp4`。
-
-3. **运行重建脚本**
-
-   打开命令提示符，设置环境变量并运行脚本：
-
-   ```bash
-   set PROJECT_DIR=E:\path\to\GaussianHaircut
-   set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
-   set DATA_PATH=E:\path\to\scene\folder
+2. 运行程序:
+   ```
    run.bat
    ```
+   
+   此脚本将显示一个菜单，您可以选择:
+   - 数据处理
+   - 模型训练
+   - 模型导出
 
-   脚本将执行数据预处理、重建和使用Blender进行最终可视化。使用Tensorboard可以查看中间可视化结果。
+## 环境变量
 
-## 技术细节
+默认环境变量设置如下:
+- PROJECT_DIR=%CD%
+- DATA_PATH=%PROJECT_DIR%\data
+- ENV_PATH=%PROJECT_DIR%\envs
+- MAMBA=%PROJECT_DIR%\micromamba.exe
+- CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
+- BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
+- COLMAP_DIR=C:\Colmap\bin
+- CMAKE_DIR=C:\Program Files\CMake\bin
+- GIT_DIR=C:\Program Files\Git\bin
+- VCVARS_DIR=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build
 
-该项目使用以下关键技术：
+如果您的软件安装在不同的位置，请在 `install.bat` 和 `run.bat` 文件中修改相应的路径。
 
-- **3D高斯体溅射**：用于场景的初始3D重建
-- **FLAME面部拟合**：用于准确重建头部形状
-- **基于链条的头发建模**：将头发表示为3D曲线，实现逼真的头发重建
-- **多视图优化**：从多个角度优化头发重建
+## install.bat 安装主要步骤:
 
-## 注意事项
+#### 1 环境检查与设置环境变量
+#### 2 用micromamba设置虚拟环境,并测试
+#### 3 拉取代码与依赖
+#### 4 构建必要模块(如pytorch,openpose,pixie,detectron2 等等)
+#### 5 下载大模型
+#### 6 测试
 
-- 环境设置可能需要几个小时，因为需要下载和编译多个大型库
-- 重建过程在单个GPU上可能需要几个小时
-- 请确保您有足够的磁盘空间（至少需要10GB用于环境和临时文件）
-- 建议使用NVIDIA RTX系列GPU以获得最佳性能
-
-## 环境变量设置
-
-在Windows系统中，您可以按照以下步骤设置环境变量：
-
-1. 右键点击"此电脑"或"我的电脑"，选择"属性"
-2. 点击"高级系统设置"
-3. 点击"环境变量"按钮
-4. 在"系统变量"区域，找到并双击"Path"变量
-5. 点击"新建"按钮，添加软件的安装路径
-6. 点击"确定"保存更改
+## run.bat 运行主要步骤:
+#### 1 预处理:
+#####     将原始图像排列成 3D 高斯 Splatting 格式
+#####     运行 COLMAP 重建并对图像和相机进行去畸变
+#####     运行 Matte-Anything
+#####     调整图像大小
+#####     使用图像的 IQA 分数进行过滤
+#####     计算方向图
+#####     运行 OpenPose
+#####     运行 Face-Alignment
+#####     运行 PIXIE
+#####     将所有 PIXIE 预测合并到一个文件中
+#####     将 COLMAP 相机转换为 txt 格式
+#####     将 COLMAP 相机转换为 H3DS 格式
+#####     删除原始文件以节省磁盘空间
+#### 2 重建:
+#####     运行 3D 高斯 Splatting 重建
+#####     运行 FLAME 网格拟合
+#####     裁剪重建场景
+#####     移除与 FLAME 头部网格相交的头发高斯分布
+#####     运行训练视图渲染
+#####     获取 FLAME 网格头皮图
+#####     运行潜在发束重建
+#####     运行发束重建
+#### 3 可视化:
+#####     将生成的发束导出为 pkl 和 ply 文件
+#####     渲染可视化效果
+#####     渲染线条
+#####     制作视频
 
 ## 故障排除
 
-- 如果遇到CUDA错误，请确认CUDA 11.8已正确安装且环境变量设置正确
-- 如果安装过程中遇到Python包安装错误，请尝试手动安装有问题的包
-- 对于OpenPose构建错误，请确保您安装了正确版本的Visual Studio和C++构建工具
+如果遇到问题:
+
+1. 确保所有必要软件都已正确安装
+2. 检查环境变量是否正确设置
+3. 查看控制台输出的错误信息
+4. 如果 CUDA 扩展编译失败，确保 Visual Studio 和 CUDA 版本兼容
+
+#### 1 环境检查与设置环境变量
+这部分看起来已经很完善，但有几点需要注意：
+确保所有路径中没有空格或特殊字符，如果有，请使用引号包围
+确保 PATH 环境变量设置正确，特别是 CUDA 路径
+#### 2 虚拟环境设置
+这部分可能会遇到的问题：
+micromamba 下载失败：可以手动下载并放置在项目目录
+环境创建失败：可能是网络问题或依赖冲突，可以尝试分步创建
+#### 3 拉取代码与依赖
+这部分需要注意：
+确保 Git 能够正常访问外部仓库
+如果某些仓库克隆失败，可以手动下载并解压
+#### 4 构建必要模块
+这是最容易出问题的部分：
+OpenPose 编译可能会失败，需要确保 Visual Studio 和 CUDA 版本兼容
+CUDA 扩展编译可能会失败，需要检查 CUDA 路径和编译器设置
+#### 5 下载大模型
+这部分可能会遇到的问题：
+下载失败：可能是网络问题，可以尝试使用代理或手动下载
+解压失败：确保有足够的磁盘空间和权限
+#### CUDA 相关问题：
+错误：找不到 CUDA 或 CUDA 版本不兼容
+解决方案：确保安装了 CUDA 11.8，并且 PATH 环境变量正确设置
+#### Visual Studio 相关问题：
+错误：找不到 Visual Studio 或版本不兼容
+解决方案：确保安装了 Visual Studio 2022，并且包含 C++ 开发组件
+#### 依赖安装问题：
+错误：pip 安装依赖失败
+解决方案：检查网络连接，尝试使用国内镜像源
+#### OpenPose 编译问题：
+错误：OpenPose 编译失败
+解决方案：检查 CMake 和 Visual Studio 设置，或尝试使用预编译版本
+#### 模型下载问题：
+错误：模型下载失败
+解决方案：检查网络连接，尝试使用代理或手动下载
 
 ## 许可证
 
-本代码基于3D Gaussian Splatting项目。有关条款和条件，请参阅LICENSE_3DGS。其余代码根据CC BY-NC-SA 4.0分发。
-
-如果本代码对您的项目有帮助，请引用以下论文。
-
-## 引用
-
-```
-@inproceedings{zakharov2024gh,
-   title = {Human Hair Reconstruction with Strand-Aligned 3D Gaussians},
-   author = {Zakharov, Egor and Sklyarova, Vanessa and Black, Michael J and Nam, Giljoo and Thies, Justus and Hilliges, Otmar},
-   booktitle = {European Conference of Computer Vision (ECCV)},
-   year = {2024}
-} 
-```
-
-## 链接
-
-- [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting)
-- [Neural Haircut](https://github.com/SamsungLabs/NeuralHaircut)：FLAME拟合管道、链条先验和发型扩散先验
-- [HAAR](https://github.com/Vanessik/HAAR)：头发上采样
-- [Matte-Anything](https://github.com/hustvl/Matte-Anything)：头发和身体分割
-- [PIXIE](https://github.com/yfeng95/PIXIE)：FLAME拟合的初始化
-- [Face-Alignment](https://github.com/1adrianb/face-alignment)、[OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose)：用于FLAME拟合的关键点检测
+请参阅原始项目的许可证信息:[https://github.com/eth-ait/GaussianHaircut](https://github.com/eth-ait/GaussianHaircut)
