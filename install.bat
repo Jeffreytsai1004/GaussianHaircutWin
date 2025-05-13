@@ -1,23 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM 添加必要的路径到 PATH
-set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
-
 echo.
-echo #####################
-echo ##### 环境初始化 #####
-echo #####################
-
-REM 初始化 micromamba shell hook
-call %MAMBA% shell init --shell cmd.exe --prefix "%~dp0\"
-
-echo.
-echo ###################
-echo ##### 环境设置 #####
-echo ###################
-
-REM 设置环境变量
+echo ######################
+echo ##### 环境变量设置 #####
+echo ######################
 set "PROJECT_DIR=%CD%"
 set "DATA_PATH=%PROJECT_DIR%\data"
 set "ENV_PATH=%PROJECT_DIR%\envs"
@@ -29,10 +16,17 @@ set "CMAKE_DIR=C:\Program Files\CMake\bin"
 set "GIT_DIR=C:\Program Files\Git\bin"
 set "VCVARS_DIR=D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
 
+REM 添加必要的路径到 PATH
+set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
+
 echo.
 echo #####################
-echo ##### 创建环境 #####
+echo ##### 环境初始化 #####
 echo #####################
+
+REM 初始化 micromamba shell hook
+call %MAMBA% shell init -s cmd.exe -p "%PROJECT_DIR%\micromamba_shell" >nul 2>&1
+call "%PROJECT_DIR%\micromamba_shell\etc\profile.d\micromamba_hook.bat"
 
 REM 创建主环境
 call %MAMBA% create -p "%ENV_PATH%\gaussian_splatting_hair" -n gaussian_splatting_hair -f environment.yml -y
