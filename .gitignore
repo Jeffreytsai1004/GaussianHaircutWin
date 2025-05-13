@@ -2,13 +2,15 @@
 datasets
 
 # External libraries
+ext/diff_gaussian_rasterization_hair/third_party
 ext/NeuralHaircut
 ext/openpose
 ext/Matte-Anything
 ext/pytorch3d
 ext/kaolin
 ext/PIXIE
-ext/diff_gaussian_rasterization_hair/third_party
+ext/hyperIQA
+ext/simple-knn
 
 # Visual Studio Code files
 .vscode

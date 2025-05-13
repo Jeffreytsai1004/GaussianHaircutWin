@@ -31,7 +31,8 @@ dependencies:
   - toml=0.10.2
   - tqdm=4.66.5
   - gdown=5.2.0
-  - colmap=3.10
+  # Windows下不需要通过conda安装colmap，改用预编译版本
+  # - colmap=3.10  
   - pip:
     - pysdf==0.1.9
     - clean-fid==0.1.35
@@ -40,6 +41,7 @@ dependencies:
     - torchdiffeq==0.2.3
     - torchsde==0.2.5
     - resize-right==0.0.2
+    # 以下本地路径会在install.bat中单独安装
     - ext/pytorch3d
     - ext/NeuralHaircut/npbgpp
     - ext/simple-knn
