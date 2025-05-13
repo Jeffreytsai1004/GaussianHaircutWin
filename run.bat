@@ -13,17 +13,16 @@ set EXP_NAME_2=stage2
 set EXP_NAME_3=stage3
 
 REM 获取项目目录
-set PROJECT_DIR=%CD%
-set DATA_PATH=%PROJECT_DIR%\data
-set ENV_PATH=%PROJECT_DIR%\envs
-set EXT_PATH=%PROJECT_DIR%\ext
-set MAMBA=%PROJECT_DIR%\micromamba.exe
-set CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
-set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
-set COLMAP_DIR=C:\Colmap\bin
-set CMAKE_DIR=C:\Program Files\CMake\bin
-set GIT_DIR=C:\Program Files\Git\bin
-set VCVARS_DIR=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build
+set "PROJECT_DIR=%CD%"
+set "DATA_PATH=%PROJECT_DIR%\data"
+set "ENV_PATH=%PROJECT_DIR%\envs"
+set "MAMBA=%PROJECT_DIR%\micromamba.exe"
+set "CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8"
+set "BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6"
+set "COLMAP_DIR=C:\Colmap\bin"
+set "CMAKE_DIR=C:\Program Files\CMake\bin"
+set "GIT_DIR=C:\Program Files\Git\bin"
+set "VCVARS_DIR=D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
 set PATH=%PROJECT_DIR%;%PATH%;%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%
 
 REM 设置模型路径
