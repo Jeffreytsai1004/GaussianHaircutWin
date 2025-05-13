@@ -25,8 +25,8 @@ echo ##### 环境初始化 #####
 echo #####################
 
 REM 初始化 micromamba shell hook
-call %MAMBA% shell init -s cmd.exe -p "%PROJECT_DIR%" >nul 2>&1
-call "%PROJECT_DIR%\condabin\mamba_hook.bat"
+call %MAMBA% shell init -s cmd.exe -p "%PROJECT_DIR%\micromamba_shell" >nul 2>&1
+call "%PROJECT_DIR%\micromamba_shell\etc\profile.d\micromamba_hook.bat"
 
 REM 创建主环境
 call %MAMBA% create -p "%ENV_PATH%\gaussian_splatting_hair" -n gaussian_splatting_hair -f environment.yml -y
