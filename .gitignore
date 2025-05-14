@@ -1,6 +1,8 @@
 # Symbolic link to data folder
 datasets
 
+envs
+
 # External libraries
 ext/diff_gaussian_rasterization_hair/third_party
 ext/NeuralHaircut

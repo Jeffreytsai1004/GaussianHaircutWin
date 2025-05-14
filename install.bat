@@ -3,22 +3,23 @@
 @echo ==== GaussianHaircut Windows 安装脚本 ====
 @echo 正在准备环境...
 
-@REM 使用绝对路径引用，确保脚本在任何位置运行都能找到micromamba
-@CALL "%~dp0micromamba.exe" create -n gaussian_splatting_hair -f environment.yml -r "%~dp0\" -y
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 创建环境失败，请检查错误信息
-    @CALL pause
-    @exit /b 1
-)
+@REM 清理可能存在的旧环境（防止文件占用问题）
+@echo 清理可能存在的旧环境...
+@CALL taskkill /f /im micromamba.exe 2>nul
 
 @REM 设置必要的环境变量
 @CALL set PROJECT_DIR=%~dp0
 @CALL set MAMBA_ROOT_PREFIX=%~dp0
-@CALL set MAMBA_EXE="%~dp0micromamba.exe"
+@CALL set MAMBA_EXE=%~dp0micromamba.exe
 @CALL set PATH=%MAMBA_ROOT_PREFIX%\Library\bin;%MAMBA_ROOT_PREFIX%\Scripts;%MAMBA_ROOT_PREFIX%\condabin;%PATH%
+@CALL set GDOWN_CACHE=cache\gdown
+@CALL set TORCH_HOME=cache\torch
+@CALL set HF_HOME=cache\huggingface
+@CALL set PYTHONDONTWRITEBYTECODE=1
+@REM 设置其他环境变量
 @CALL set DATA_PATH=%PROJECT_DIR%data
-@CALL set ENV_PATH=%PROJECT_DIR%\envs
-@CALL set MAMBA=%PROJECT_DIR%\micromamba.exe
+@CALL set ENV_PATH=%PROJECT_DIR%envs
+@CALL set MAMBA=%PROJECT_DIR%micromamba.exe
 @CALL set CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 @CALL set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
 @CALL set COLMAP_DIR=C:\Colmap\bin
@@ -26,6 +27,31 @@
 @CALL set GIT_DIR=C:\Program Files\Git\bin
 @CALL set VCVARS_DIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
 @CALL set PATH=%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
+
+@REM 清理旧目录
+@CALL rd /s /q "%MAMBA_ROOT_PREFIX%envs" 2>nul
+@CALL rd /s /q "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
+@CALL rd /s /q "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
+@CALL rd /s /q "%MAMBA_ROOT_PREFIX%condabin" 2>nul
+@CALL rd /s /q "%PROJECT_DIR%cache" 2>nul
+
+@REM 创建必要的目录结构
+@CALL mkdir "%MAMBA_ROOT_PREFIX%envs" 2>nul
+@CALL mkdir "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
+@CALL mkdir "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
+@CALL mkdir "%MAMBA_ROOT_PREFIX%condabin" 2>nul
+@CALL mkdir "%PROJECT_DIR%\data" 2>nul
+
+@echo.
+@echo ==== 创建主环境 ====
+
+@REM 使用绝对路径引用，确保脚本在任何位置运行都能找到micromamba
+@CALL "%~dp0micromamba.exe" create -n gaussian_splatting_hair -f environment.yml -r "%~dp0\" -y
+@CALL IF %ERRORLEVEL% NEQ 0 (
+    @echo 创建环境失败，请检查错误信息
+    @CALL pause
+    @exit /b 1
+)
 
 @REM 直接激活环境而不使用shell hook
 @CALL "%~dp0micromamba.exe" shell hook --shell cmd.exe --prefix "%~dp0\" >nul 2>&1
@@ -70,8 +96,7 @@
 @echo.
 @echo ==== 克隆代码库和第三方依赖 ====
 
-@CALL if not exist "%PROJECT_DIR%ext" mkdir "%PROJECT_DIR%ext"
-@CALL cd /d "%PROJECT_DIR%ext"
+@CALL cd /d "%PROJECT_DIR%\ext"
 
 @REM 克隆 openpose 并更新子模块
 @CALL git clone --depth 1 https://github.com/CMU-Perceptual-Computing-Lab/openpose
@@ -105,13 +130,13 @@
 @CALL git clone https://github.com/camenduru/simple-knn
 
 @REM 确保目录存在
-@CALL if not exist "diff_gaussian_rasterization_hair\third_party" mkdir -p "diff_gaussian_rasterization_hair\third_party"
+@CALL if not exist "diff_gaussian_rasterization_hair\third_party" mkdir "diff_gaussian_rasterization_hair\third_party"
 
 @REM 克隆 diff_gaussian_rasterization_hair 的 glm 子模块
 @CALL git clone https://github.com/g-truc/glm diff_gaussian_rasterization_hair\third_party\glm
 @CALL cd diff_gaussian_rasterization_hair\third_party\glm
 @CALL git checkout 5c46b9c07008ae65cb81ab79cd677ecc1934b903
-@CALL cd "%PROJECT_DIR%ext"
+@CALL cd "%PROJECT_DIR%\ext"
 
 @REM 克隆 kaolin 并切换至v0.15.0
 @CALL git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
@@ -131,17 +156,17 @@
 @echo.
 @echo ====== 下载预训练模型 ======
 
-@CALL cd "%PROJECT_DIR%ext\NeuralHaircut"
+@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut"
 @CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown --folder https://drive.google.com/drive/folders/1TCdJ0CKR3Q6LviovndOkJaKm8S1T9F_8
-@CALL cd "%PROJECT_DIR%ext\NeuralHaircut\pretrained_models\diffusion_prior"
+@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut\pretrained_models\diffusion_prior"
 @CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1_9EOUXHayKiGH5nkrayncln3d6m1uV7f
-@CALL cd "%PROJECT_DIR%ext\NeuralHaircut\PIXIE"
+@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut\PIXIE"
 @CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1mPcGu62YPc4MdkT8FFiOCP629xsENHZf
 @CALL tar -xvzf pixie_data.tar.gz
 @CALL del pixie_data.tar.gz
-@CALL cd "%PROJECT_DIR%ext\hyperIQA"
+@CALL cd "%PROJECT_DIR%\ext\hyperIQA"
 @CALL if not exist pretrained mkdir pretrained
-@CALL cd "%PROJECT_DIR%ext\hyperIQA\pretrained"
+@CALL cd "%PROJECT_DIR%\ext\hyperIQA\pretrained"
 @CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
 @CALL cd "%PROJECT_DIR%"
 
@@ -150,13 +175,13 @@
 
 @CALL "%~dp0condabin\micromamba.bat" activate matte_anything
 @REM 安装 segment-anything, detectron2 和 GroundingDINO
-@CALL cd "%PROJECT_DIR%ext\Matte-Anything\segment-anything"
+@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\segment-anything"
 @CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%ext\Matte-Anything\detectron2"
+@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\detectron2"
 @CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%ext\Matte-Anything\GroundingDINO"
+@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\GroundingDINO"
 @CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%ext\Matte-Anything"
+@CALL cd "%PROJECT_DIR%\ext\Matte-Anything"
 @CALL pip install supervision==0.22.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 @REM 下载模型文件
@@ -168,13 +193,13 @@
 
 @REM 下载openpose模型
 @CALL "%~dp0condabin\micromamba.bat" activate openpose
-@CALL cd "%PROJECT_DIR%ext\openpose"
+@CALL cd "%PROJECT_DIR%\ext\openpose"
 @CALL powershell -Command "Invoke-WebRequest -Uri 'https://drive.google.com/uc?export=download&id=1Yn03cKKfVOq4qXmgBMQD20UMRRRkd_tV' -OutFile 'models.tar.gz'"
 @CALL tar -xvzf models.tar.gz
 @CALL del models.tar.gz
 
 @REM 编译 openpose（需先使用 VS vcvarsall.bat）
-@CALL cd "%PROJECT_DIR%ext\openpose"
+@CALL cd "%PROJECT_DIR%\ext\openpose"
 @CALL IF EXIST "%VCVARS_DIR%\vcvarsall.bat" (
     @CALL "%VCVARS_DIR%\vcvarsall.bat" x64
     @REM 编译Openpose
@@ -193,7 +218,7 @@
 @REM PIXIE
 @CALL "%~dp0condabin\micromamba.bat" activate pixie
 @REM 下载PIXIE模型
-@CALL cd "%PROJECT_DIR%ext\PIXIE"
+@CALL cd "%PROJECT_DIR%\ext\PIXIE"
 @CALL if exist fetch_model.bat (
     @CALL fetch_model.bat
 ) else (
