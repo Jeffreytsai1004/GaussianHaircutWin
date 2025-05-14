@@ -1,4 +1,22 @@
-# 基础依赖
+# GaussianHaircut Windows Version 依赖列表
+# 注意: 此文件仅供参考，实际安装通过install.bat和micromamba完成
+
+# ======= 来自environment.yml的所有依赖 =======
+# Python基础环境
+python=3.9
+pip=23.3.1
+setuptools=69.5.1
+
+# Pytorch及相关
+pytorch=2.1.1
+torchvision=0.16.1
+torchaudio=2.1.1
+pytorch-cuda=11.8
+
+# 构建工具
+cmake=3.28.0
+
+# 数据处理和工具
 plyfile==0.8.1
 pyhocon==0.3.60
 icecream==2.1.3
@@ -6,67 +24,53 @@ einops==0.6.0
 accelerate==0.18.0
 jsonmerge==1.9.0
 easydict==1.9
+iopath==0.1.10
 tensorboardx==2.6
 scikit-image==0.20.0
+fvcore==0.1.5
 toml==0.10.2
 tqdm==4.66.5
 gdown==5.2.0
+
+# 其他必要依赖
+pysdf==0.1.9
+clean-fid==0.1.35
+face-alignment==1.4.1
+clip==0.2.0
+torchdiffeq==0.2.3
+torchsde==0.2.5
+resize-right==0.0.2
 numpy>=1.20.0
 pillow>=9.0.0
 opencv-python>=4.5.0
 matplotlib>=3.5.0
 scipy>=1.7.0
 
-# 3D 渲染和处理
+# ======= Windows特有依赖 =======
+# 3D渲染和处理
 PyOpenGL>=3.1.0
 glfw>=2.5.0
 xatlas>=0.0.6
 ninja>=1.10.0
 imageio>=2.15.0
-
-# 神经网络和机器学习
-pysdf==0.1.9
-clean-fid==0.1.35
-face-alignment==1.4.1
-clip==0.2.0
-torchdiffeq==0.2.3
-torchsde==0.2.5
-resize-right==0.0.2
-lpips>=0.1.4
-
-torch==1.13.1
-torchvision==0.14.1
-scikit-learn>=0.24.0
+imageio-ffmpeg>=0.4.5
 trimesh>=3.9.0
 pyrender>=0.1.45
-imageio>=2.9.0
-imageio-ffmpeg>=0.4.5
 kornia>=0.6.0
 open3d>=0.15.0
-pytorch3d>=0.7.0
 wandb>=0.12.0
 tensorboard>=2.7.0
-pyhocon>=0.3.57
 chumpy>=0.70
-configargparse>=1.5.3 
+configargparse>=1.5.3
 
-# Gaussian Splatting Hair pip requirements (from environment.yml)
-pysdf==0.1.9
-clean-fid==0.1.35
-face-alignment==1.4.1
-clip==0.2.0
-torchdiffeq==0.2.3
-torchsde==0.2.5
-resize-right==0.0.2
-ext/pytorch3d
-ext/NeuralHaircut/npbgpp
-ext/simple-knn
-ext/diff_gaussian_rasterization_hair
-ext/kaolin
+# ======= 需要从源码编译安装的库 =======
+# 以下依赖项需要从源码编译安装，安装脚本会处理
+# pytorch3d - https://github.com/facebookresearch/pytorch3d
+# simple-knn - https://github.com/camenduru/simple-knn
+# diff_gaussian_rasterization_hair
+# kaolin - https://github.com/NVIDIAGameWorks/kaolin
+# NeuralHaircut/npbgpp
 
-# 以下依赖需要单独安装或从源码安装
-# nvdiffrast - 通过 git+https://github.com/NVlabs/nvdiffrast.git 安装
-# pytorch3d - 需要从源码安装
-# simple-knn - 需要从源码安装
-# diff_gaussian_rasterization_hair - 需要从源码安装
-# kaolin - 需要从源码安装
+# ======= Windows特有系统需求 =======
+# Visual C++ Redistributable (通过Visual Studio安装)
+# CUDA 11.8 Runtime and Development Toolkit

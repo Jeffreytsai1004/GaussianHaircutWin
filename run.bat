@@ -23,7 +23,19 @@ set "COLMAP_DIR=C:\Colmap\bin"
 set "CMAKE_DIR=C:\Program Files\CMake\bin"
 set "GIT_DIR=C:\Program Files\Git\bin"
 set "VCVARS_DIR=D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
-set PATH=%PROJECT_DIR%;%PATH%;%CUDA_DIR%\bin;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%
+REM 设置CUDA环境变量
+set PATH=%PROJECT_DIR%;%PATH%;%CUDA_DIR%\bin;%CUDA_DIR%\libnvvp;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%
+
+REM 检查CUDA是否可用
+echo 正在检查CUDA环境...
+nvcc --version >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo 警告: CUDA未正确安装或配置，请检查CUDA_DIR环境变量
+    echo 当前CUDA_DIR设置为: %CUDA_DIR%
+    echo 请确保CUDA 11.8已正确安装，并且PATH包含CUDA bin目录
+    echo 继续运行可能会导致错误。
+    pause
+)
 
 REM 设置模型路径
 set SAM_MODEL=%PROJECT_DIR%\ext\Matte-Anything\pretrained\sam_vit_h_4b8939.pth
@@ -39,6 +51,28 @@ if "%DATA_PATH%"=="" (
     echo 例如: set DATA_PATH=E:\data\my_scene
     pause
     exit /b 1
+)
+
+REM 确保数据目录存在
+if not exist "%DATA_PATH%" (
+    echo 错误: 数据目录不存在: %DATA_PATH%
+    echo 是否创建该目录? (Y/N)
+    set /p create_dir=
+    if /i "!create_dir!"=="Y" (
+        mkdir "%DATA_PATH%"
+        echo 已创建数据目录: %DATA_PATH%
+    ) else (
+        echo 操作取消
+        pause
+        exit /b 1
+    )
+)
+
+REM 检查原始视频是否存在
+if not exist "%DATA_PATH%\raw.mp4" (
+    echo 警告: 未找到原始视频文件: %DATA_PATH%\raw.mp4
+    echo 请确保将原始视频文件命名为raw.mp4并放入数据目录中
+    echo 或在菜单中选择数据目录后再继续
 )
 
 REM 确保BLENDER_DIR环境变量已设置
@@ -59,7 +93,7 @@ if not exist "%MAMBA%" (
 )
 
 REM 检查环境是否存在
-if not exist "%ENV_PATH%\gaussianhaircut" (
+if not exist "%ENV_PATH%\gaussian_splatting_hair" (
     echo 环境未安装，请先运行 install.bat
     pause
     exit /b 1
@@ -226,7 +260,7 @@ set EXP_PATH_1=%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%
 REM 提取视频帧
 echo [1/13] 提取视频帧...
 if not exist "%DATA_PATH%\images" mkdir "%DATA_PATH%\images"
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\extract_frames.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\extract_frames.py ^
     --input_path "%DATA_PATH%\raw.mp4" ^
     --output_path "%DATA_PATH%\images" ^
     --fps 5
@@ -234,13 +268,16 @@ if %ERRORLEVEL% neq 0 (
     echo 提取视频帧失败! 
     echo 可能原因: 视频文件不存在或格式不支持
     echo 解决方案: 确保raw.mp4存在于数据目录中，并且是有效的视频文件
+    echo 尝试使用替代方法:
+    echo 1. 使用ffmpeg直接提取: ffmpeg -i "%DATA_PATH%\raw.mp4" -qscale:v 1 "%DATA_PATH%\images\%%04d.jpg"
+    echo 2. 或使用其他视频编辑软件手动提取帧并放入images目录
     pause
     exit /b 1
 )
 
 REM 运行COLMAP
 echo [2/13] 运行COLMAP...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\run_colmap.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\colmap_parsing.py ^
     --data_path %DATA_PATH% ^
     --colmap_path %COLMAP_DIR% ^
     --camera_model %CAMERA%
@@ -275,7 +312,7 @@ echo [4/13] 创建图像副本...
 if not exist "%DATA_PATH%\images_2" mkdir "%DATA_PATH%\images_2"
 if not exist "%DATA_PATH%\images_3" mkdir "%DATA_PATH%\images_3"
 if not exist "%DATA_PATH%\images_4" mkdir "%DATA_PATH%\images_4"
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\copy_images.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\copy_images.py ^
     --data_path %DATA_PATH%
 if %ERRORLEVEL% neq 0 (
     echo 创建图像副本失败! 
@@ -287,7 +324,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 运行图像裁剪
 echo [5/13] 运行图像裁剪...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\crop_images.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\crop_images.py ^
     --data_path %DATA_PATH%
 if %ERRORLEVEL% neq 0 (
     echo 图像裁剪失败! 
@@ -299,7 +336,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 运行图像缩放
 echo [6/13] 运行图像缩放...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\resize_images.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\resize_images.py ^
     --data_path %DATA_PATH% ^
     --max_size 512
 if %ERRORLEVEL% neq 0 (
@@ -328,7 +365,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行 Face-Alignment
 echo [8/13] 运行 Face-Alignment...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\run_face_alignment.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\run_face_alignment.py ^
     --data_dir %DATA_PATH% ^
     --model_path "%FACE_ALIGN_MODEL%"
 if %ERRORLEVEL% neq 0 (
@@ -356,7 +393,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 将所有PIXIE预测合并到单个文件中
 echo [10/13] 合并PIXIE预测...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\merge_pixie_predictions.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\merge_pixie_predictions.py ^
     --data_path %DATA_PATH%
 if %ERRORLEVEL% neq 0 (
     echo 合并PIXIE预测失败! 
@@ -369,7 +406,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行FLAME拟合
 echo [11/13] 运行FLAME拟合...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\run_flame_fitting.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\run_flame_fitting.py ^
     --data_path %DATA_PATH% ^
     --flame_model_path "%FLAME_MODEL%" ^
     --exp_name %EXP_NAME_1%
@@ -383,7 +420,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 准备3D高斯Splatting数据
 echo [12/13] 准备3D高斯Splatting数据...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\prepare_gaussian_splatting_data.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\prepare_gaussian_splatting_data.py ^
     --data_path %DATA_PATH% ^
     --exp_name %EXP_NAME_1%
 if %ERRORLEVEL% neq 0 (
@@ -396,7 +433,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM 准备头发分割
 echo [13/13] 准备头发分割...
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\prepare_hair_segmentation.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\prepare_hair_segmentation.py ^
     --data_path %DATA_PATH%
 if %ERRORLEVEL% neq 0 (
     echo 准备头发分割失败! 
@@ -417,7 +454,7 @@ set EXP_PATH_1=%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%
 REM 运行3D高斯Splatting重建
 echo [1/10] 运行3D高斯Splatting重建...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\train.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\train.py ^
     -s %DATA_PATH% ^
     -m "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     --eval ^
@@ -435,7 +472,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行FLAME网格拟合 (阶段1)
 echo [2/10] 运行FLAME网格拟合 (阶段1)...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\fit.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\fit.py ^
     --conf %PROJECT_DIR%\confs\train_person_1.conf ^
     --batch_size 32 ^
     --train_rotation False ^
@@ -455,7 +492,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行FLAME网格拟合 (阶段2)
 echo [3/10] 运行FLAME网格拟合 (阶段2)...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\fit.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\fit.py ^
     --conf %PROJECT_DIR%\confs\train_person_1.conf ^
     --batch_size 32 ^
     --train_rotation True ^
@@ -476,7 +513,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行FLAME网格拟合 (阶段3)
 echo [4/10] 运行FLAME网格拟合 (阶段3)...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\fit.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\fit.py ^
     --conf %PROJECT_DIR%\confs\train_person_1.conf ^
     --batch_size 32 ^
     --train_rotation True ^
@@ -497,7 +534,7 @@ if %ERRORLEVEL% neq 0 (
 REM 裁剪重建场景
 echo [5/10] 裁剪重建场景...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\scale_scene_into_sphere.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\scale_scene_into_sphere.py ^
     --path_to_data %DATA_PATH% ^
     -m "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     --iter 30000
@@ -512,7 +549,7 @@ if %ERRORLEVEL% neq 0 (
 REM 删除与FLAME头部网格相交的头发高斯分布
 echo [6/10] 过滤FLAME交叉点...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\filter_gaussians_by_flame.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\filter_gaussians_by_flame.py ^
     --data_path %DATA_PATH% ^
     --model_path "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     --flame_mesh_path "%DATA_PATH%\flame_fitting\%EXP_NAME_1%\stage_3\mesh_final.obj" ^
@@ -528,7 +565,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行训练视图渲染
 echo [7/10] 运行训练视图渲染...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\render.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\render.py ^
     -s %DATA_PATH% ^
     -m "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     --iteration 30000 ^
@@ -549,7 +586,7 @@ if %ERRORLEVEL% neq 0 (
 REM 获取FLAME网格头皮图
 echo [8/10] 获取FLAME网格头皮图...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\extract_non_visible_head_scalp.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\extract_non_visible_head_scalp.py ^
     --project_dir %PROJECT_DIR%\ext\NeuralHaircut ^
     --data_dir %DATA_PATH% ^
     --flame_mesh_dir %DATA_PATH%\flame_fitting\%EXP_NAME_1% ^
@@ -565,7 +602,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行潜在头发链条重建
 echo [9/10] 运行潜在头发链条重建...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\train_latent_strands.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\train_latent_strands.py ^
     -s %DATA_PATH% ^
     -m "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     -r 1 ^
@@ -596,7 +633,7 @@ if %ERRORLEVEL% neq 0 (
 REM 运行头发链条重建
 echo [10/10] 运行头发链条重建...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\train_strands.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\train_strands.py ^
     -s %DATA_PATH% ^
     -m "%DATA_PATH%\3d_gaussian_splatting\%EXP_NAME_1%" ^
     -r 1 ^
@@ -639,7 +676,7 @@ echo 开始可视化...
 REM 将结果链条导出为pkl和ply
 echo [1/4] 导出结果链条...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\preprocessing\export_curves.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\preprocessing\export_curves.py ^
     --data_dir %DATA_PATH% ^
     --model_name %EXP_NAME_3% ^
     --iter 10000 ^
@@ -657,7 +694,7 @@ if %ERRORLEVEL% neq 0 (
 REM 渲染可视化
 echo [2/4] 渲染可视化...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\postprocessing\render_video.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\postprocessing\render_video.py ^
     --blender_path "%BLENDER_DIR%" ^
     --input_path "%DATA_PATH%" ^
     --exp_name_1 "%EXP_NAME_1%" ^
@@ -673,7 +710,7 @@ if %ERRORLEVEL% neq 0 (
 REM 渲染链条
 echo [3/4] 渲染链条...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\render_strands.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\render_strands.py ^
     -s %DATA_PATH% ^
     --data_dir "%DATA_PATH%" ^
     --data_device "cpu" ^
@@ -698,7 +735,7 @@ if %ERRORLEVEL% neq 0 (
 REM 制作视频
 echo [4/4] 制作视频...
 set CUDA_VISIBLE_DEVICES=%GPU%
-call %MAMBA% run -p "%ENV_PATH%\gaussianhaircut" python %PROJECT_DIR%\src\postprocessing\concat_video.py ^
+call %MAMBA% run -p "%ENV_PATH%\gaussian_splatting_hair" python %PROJECT_DIR%\src\postprocessing\concat_video.py ^
     --input_path "%DATA_PATH%" ^
     --exp_name_3 "%EXP_NAME_3%"
 if %ERRORLEVEL% neq 0 (

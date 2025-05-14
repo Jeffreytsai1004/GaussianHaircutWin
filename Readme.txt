@@ -1,4 +1,4 @@
-# GaussianHaircut
+﻿# GaussianHaircut
 
 [English](README_EN.md) | 中文
 
