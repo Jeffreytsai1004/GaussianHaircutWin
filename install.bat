@@ -1,374 +1,195 @@
-@echo off
-@REM 初始化安装过程
-@echo ==== GaussianHaircut Windows 安装脚本 ====
-@echo 正在准备环境...
-
-@REM 清理可能存在的旧环境（防止文件占用问题）
-@echo 清理可能存在的旧环境...
-@CALL taskkill /f /im micromamba.exe 2>nul
-@CALL taskkill /f /im python.exe 2>nul
-@CALL taskkill /f /im pip.exe 2>nul
-
-@REM 等待进程完全终止
-@timeout /t 2 >nul
-
-@REM 删除可能的锁文件
-@CALL del /f /q "%~dp0*.lock" 2>nul
-@CALL del /f /q "%~dp0envs\*.lock" 2>nul
-@CALL del /f /q "%~dp0pkgs\*.lock" 2>nul
-
-@REM 设置必要的环境变量(使用绝对路径)
-@CALL set PROJECT_DIR=%~dp0
-@CALL set MAMBA_ROOT_PREFIX=%PROJECT_DIR%
-@CALL set MAMBA_EXE=%PROJECT_DIR%micromamba.exe
-
-@REM 设置缓存目录（使用绝对路径）
-@CALL mkdir "%PROJECT_DIR%cache" 2>nul
-@CALL mkdir "%PROJECT_DIR%cache\gdown" 2>nul
-@CALL mkdir "%PROJECT_DIR%cache\torch" 2>nul
-@CALL mkdir "%PROJECT_DIR%cache\huggingface" 2>nul
-@CALL set GDOWN_CACHE=%PROJECT_DIR%cache\gdown
-@CALL set TORCH_HOME=%PROJECT_DIR%cache\torch
-@CALL set HF_HOME=%PROJECT_DIR%cache\huggingface
-@CALL set PYTHONDONTWRITEBYTECODE=1
-
-@REM 设置其他环境变量
-@CALL set DATA_PATH=%PROJECT_DIR%data
-@CALL set ENV_PATH=%PROJECT_DIR%envs
-@CALL set MAMBA=%PROJECT_DIR%micromamba.exe
-
-@REM 设置外部工具路径
-@CALL set CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
-@CALL set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
-@CALL set COLMAP_DIR=C:\Colmap\bin
-@CALL set CMAKE_DIR=C:\Program Files\CMake\bin
-@CALL set GIT_DIR=C:\Program Files\Git\bin
-@CALL set VCVARS_DIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
-@REM 添加CUDA库路径到PATH
-@CALL set PATH=%CUDA_DIR%\bin;%CUDA_DIR%\libnvvp;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%;%PATH%
-
-@REM 清理旧目录
-@CALL rd /s /q "%MAMBA_ROOT_PREFIX%envs" 2>nul
-@CALL rd /s /q "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
-@CALL rd /s /q "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
-@CALL rd /s /q "%MAMBA_ROOT_PREFIX%condabin" 2>nul
-
-@REM 创建必要的目录结构
-@CALL mkdir "%MAMBA_ROOT_PREFIX%envs" 2>nul
-@CALL mkdir "%MAMBA_ROOT_PREFIX%Library" 2>nul
-@CALL mkdir "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
-@CALL mkdir "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
-@CALL mkdir "%MAMBA_ROOT_PREFIX%condabin" 2>nul
-@CALL mkdir "%PROJECT_DIR%ext" 2>nul
-@CALL mkdir "%PROJECT_DIR%data" 2>nul
-
-@REM 检查CUDA是否可用
-@echo 检查CUDA环境...
-nvcc --version >nul 2>&1
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 警告: CUDA未正确安装或配置，请检查CUDA_DIR环境变量
-    @echo 当前CUDA_DIR设置为: %CUDA_DIR%
-    @echo 请确保CUDA 11.8已正确安装，并且PATH包含CUDA bin目录
-    @echo 继续安装可能会导致某些组件编译失败。
-    @CALL pause
-)
-
-@echo.
-@echo ==== 创建主环境 ====
-
-@REM 使用绝对路径引用，确保脚本在任何位置运行都能找到micromamba
-@CALL "%~dp0micromamba.exe" create -n gaussian_splatting_hair -f environment.yml -r "%~dp0\" -y
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 创建环境失败，尝试使用镜像源...
-    @CALL "%~dp0micromamba.exe" create -n gaussian_splatting_hair -f environment.yml -r "%~dp0\" -y -c conda-forge -c pytorch -c nvidia
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 创建环境仍然失败，请检查网络连接或手动安装依赖
-        @CALL pause
-        @exit /b 1
-    )
-)
-
-@REM 创建并写入激活脚本，参考activate.bat
-@echo @CALL "%%~dp0micromamba.exe" shell init --shell cmd.exe --prefix "%%~dp0\" > activate_gaussian_hair.bat
-@echo @CALL "%%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair >> activate_gaussian_hair.bat
-@echo @echo 已激活GaussianHaircut环境，现在可以运行run.bat >> activate_gaussian_hair.bat
-
-@REM 设置shell hook
-@CALL "%~dp0micromamba.exe" shell hook --shell cmd.exe --prefix "%~dp0\" >nul 2>&1
-
-@REM 激活环境
+CALL "%~dp0micromamba.exe" create -n gaussian_splatting_hair python==3.9 pip==23.3.1 git==2.41.0 -c pytorch -c conda-forge -r "%~dp0\" -y
+@CALL "%~dp0micromamba.exe" shell init --shell cmd.exe --prefix "%~dp0\"
 @CALL "%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 激活环境失败，尝试替代方案...
-    @CALL "%~dp0micromamba.exe" run -n gaussian_splatting_hair -r "%~dp0\" echo 环境测试
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 环境激活替代方案也失败，请检查安装
-        @CALL pause
-        @exit /b 1
-    )
-)
+@CALL set GDOWN_CACHE=cache\gdown
+@CALL set TORCH_HOME=cache\torch
+@CALL set HF_HOME=cache\huggingface
+@CALL set PYTHONDONTWRITEBYTECODE=1
+@CALL set "PROJECT_DIR=%CD%"
+@CALL set "DATA_PATH=%PROJECT_DIR%\data"
+@CALL set "ENV_PATH=%PROJECT_DIR%\envs"
+@CALL set "MAMBA=%PROJECT_DIR%\micromamba.exe"
+@CALL set "CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8"
+@CALL set "BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6"
+@CALL set "COLMAP_DIR=C:\Colmap\bin"
+@CALL set "CMAKE_DIR=C:\Program Files\CMake\bin"
+@CALL set "GIT_DIR=C:\Program Files\Git\bin"
+@CALL set "VCVARS_DIR=D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
+@CALL set PATH=%PROJECT_DIR%;%PATH%;%CUDA_DIR%\bin;%CUDA_DIR%\libnvvp;%BLENDER_DIR%;%COLMAP_DIR%;%CMAKE_DIR%;%GIT_DIR%
+@CALL python -m pip install --upgrade pip
+@CALL python -m pip install torch==2.1.1+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --no-cache-dir
+@CALL python -m pip install -r requirements.txt
 
-@echo.
-@echo ==== 创建附加环境 ====
+@echo ===== 创建必要目录 =====
+@CALL mkdir ext 2>nul
+@CALL mkdir data 2>nul
+@CALL mkdir cache 2>nul
+@CALL mkdir cache\gdown 2>nul
+@CALL mkdir cache\torch 2>nul
+@CALL mkdir cache\huggingface 2>nul
+@CALL mkdir ext\diff_gaussian_rasterization_hair\third_party 2>nul
 
-@REM 创建 Matte-Anything 环境
-@echo 正在创建 Matte-Anything 环境...
+@echo ===== 克隆外部依赖库 =====
+@CALL cd /d %PROJECT_DIR%\ext
+@echo 克隆 openpose...
+@CALL git clone https://github.com/CMU-Perceptual-Computing-Lab/openpose --depth 1
+@if %ERRORLEVEL% NEQ 0 @echo 克隆 openpose 失败，尝试使用镜像... && @CALL git clone https://github.com.cnpmjs.org/CMU-Perceptual-Computing-Lab/openpose --depth 1
+@CALL cd openpose && git submodule update --init --recursive --remote
+@CALL cd %PROJECT_DIR%\ext
+
+@echo 克隆 Matte-Anything...
+@CALL git clone https://github.com/hustvl/Matte-Anything
+@CALL cd Matte-Anything && git clone https://github.com/IDEA-Research/GroundingDINO.git && git clone https://github.com/facebookresearch/segment-anything.git && git clone https://github.com/facebookresearch/detectron2.git
+@CALL cd %PROJECT_DIR%\ext
+
+@echo 克隆 NeuralHaircut...
+@CALL git clone https://github.com/egorzakharov/NeuralHaircut.git --recursive
+
+@echo 克隆 pytorch3d...
+@CALL git clone https://github.com/facebookresearch/pytorch3d
+@CALL cd pytorch3d && git checkout 2f11ddc5ee7d6bd56f2fb6744a16776fab6536f7
+@CALL cd %PROJECT_DIR%\ext
+
+@echo 克隆 simple-knn...
+@CALL git clone https://github.com/camenduru/simple-knn
+
+@echo 克隆 glm...
+@CALL git clone https://github.com/g-truc/glm %PROJECT_DIR%\ext\diff_gaussian_rasterization_hair\third_party\glm
+@CALL cd %PROJECT_DIR%\ext\diff_gaussian_rasterization_hair\third_party\glm
+@CALL git checkout 5c46b9c07008ae65cb81ab79cd677ecc1934b903
+@CALL cd %PROJECT_DIR%\ext
+
+@echo 克隆 kaolin...
+@CALL git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
+@CALL cd kaolin && git checkout v0.15.0
+@CALL cd %PROJECT_DIR%\ext
+
+@echo 克隆 hyperIQA...
+@CALL git clone https://github.com/SSL92/hyperIQA
+
+@echo 克隆 PIXIE...
+@CALL git clone https://github.com/yfeng95/PIXIE
+
+@echo ===== 下载模型文件 =====
+@CALL cd %PROJECT_DIR%\ext\NeuralHaircut
+@CALL python -m gdown --folder https://drive.google.com/drive/folders/1TCdJ0CKR3Q6LviovndOkJaKm8S1T9F_8
+
+@echo 下载 diffusion prior...
+@CALL cd %PROJECT_DIR%\ext\NeuralHaircut\pretrained_models\diffusion_prior
+@CALL python -m gdown 1_9EOUXHayKiGH5nkrayncln3d6m1uV7f
+
+@echo 下载 PIXIE 数据...
+@CALL cd %PROJECT_DIR%\ext\NeuralHaircut\PIXIE
+@CALL python -m gdown 1mPcGu62YPc4MdkT8FFiOCP629xsENHZf
+@CALL tar -xzf pixie_data.tar.gz
+@CALL del pixie_data.tar.gz
+
+@echo 下载 hyperIQA 模型...
+@CALL cd %PROJECT_DIR%\ext\hyperIQA
+@CALL mkdir pretrained
+@CALL cd pretrained
+@CALL python -m gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
+
+@echo ===== 创建 Matte-Anything 环境 =====
+@CALL cd %PROJECT_DIR%
 @CALL "%~dp0micromamba.exe" create -n matte_anything -c pytorch -c nvidia -c conda-forge ^
     pytorch=2.0.0 pytorch-cuda=11.8 torchvision tensorboard timm=0.5.4 opencv=4.5.3 ^
     mkl=2024.0 setuptools=58.2.0 easydict wget scikit-image gradio=3.46.1 fairscale -r "%~dp0\" -y
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 创建matte_anything环境失败，尝试使用镜像源...
-    @CALL "%~dp0micromamba.exe" create -n matte_anything -c conda-forge -c pytorch -c nvidia ^
-        pytorch=2.0.0 pytorch-cuda=11.8 torchvision tensorboard timm=0.5.4 opencv=4.5.3 ^
-        mkl=2024.0 setuptools=58.2.0 easydict wget scikit-image gradio=3.46.1 fairscale -r "%~dp0\" -y
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 创建matte_anything环境仍然失败，请检查网络连接
-        @CALL pause
-        @exit /b 1
-    )
-)
 
-@REM 创建 OpenPose 环境
-@echo 正在创建 OpenPose 环境...
-@CALL "%~dp0micromamba.exe" create -n openpose cmake=3.20 -c conda-forge -r "%~dp0\" -y
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 创建openpose环境失败，尝试其他源...
-    @CALL "%~dp0micromamba.exe" create -n openpose cmake=3.20 -c defaults -c conda-forge -r "%~dp0\" -y
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 创建openpose环境仍然失败，请检查网络连接
-        @CALL pause
-        @exit /b 1
-    )
-)
-@CALL "%~dp0condabin\micromamba.bat" activate openpose
-@CALL pip install gdown -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-@REM 创建 PIXIE 环境
-@echo 正在创建 PIXIE 环境...
-@CALL "%~dp0micromamba.exe" create -n pixie -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d ^
-    python=3.8 pytorch=2.0.0 torchvision=0.15.0 torchaudio=2.0.0 pytorch-cuda=11.8 fvcore pytorch3d=0.7.5 kornia matplotlib pyyaml==5.4.1 -r "%~dp0\" -y
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 创建pixie环境失败，尝试其他源...
-    @CALL "%~dp0micromamba.exe" create -n pixie -c conda-forge -c pytorch -c nvidia -c fvcore -c pytorch3d ^
-        python=3.8 pytorch=2.0.0 torchvision=0.15.0 torchaudio=2.0.0 pytorch-cuda=11.8 fvcore pytorch3d=0.7.5 kornia matplotlib pyyaml==5.4.1 -r "%~dp0\" -y
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 创建pixie环境仍然失败，请检查网络连接
-        @CALL pause
-        @exit /b 1
-    )
-)
-@CALL "%~dp0condabin\micromamba.bat" activate pixie
-@CALL pip install gdown face-alignment -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-@REM 回到主环境
-@CALL "%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair
-
-@echo.
-@echo ==== 克隆代码库和第三方依赖 ====
-
-@CALL cd /d "%PROJECT_DIR%\ext"
-
-@REM 克隆 openpose 并更新子模块
-@echo 正在克隆 OpenPose...
-@CALL git clone --depth 1 https://github.com/CMU-Perceptual-Computing-Lab/openpose
-@CALL IF %ERRORLEVEL% NEQ 0 (
-    @echo 克隆openpose失败，尝试使用镜像...
-    @CALL git clone --depth 1 https://github.com.cnpmjs.org/CMU-Perceptual-Computing-Lab/openpose
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 克隆openpose失败，请检查网络连接
-        @CALL pause
-        @exit /b 1
-    )
-)
-@CALL cd openpose
-@CALL git submodule update --init --recursive --remote
-@CALL cd ..
-
-@REM 克隆 Matte-Anything 和相关依赖
-@echo 正在克隆 Matte-Anything 及其依赖...
-@CALL git clone https://github.com/hustvl/Matte-Anything
-@CALL cd Matte-Anything
-@CALL git clone https://github.com/facebookresearch/segment-anything
-@CALL git clone https://github.com/facebookresearch/detectron2
-@CALL git clone https://github.com/IDEA-Research/GroundingDINO.git
-@CALL cd ..
-
-@REM 克隆 NeuralHaircut
-@echo 正在克隆 NeuralHaircut...
-@CALL git clone --recursive https://github.com/egorzakharov/NeuralHaircut
-
-@REM 克隆 pytorch3d 并切换至指定 commit
-@echo 正在克隆 pytorch3d...
-@CALL git clone https://github.com/facebookresearch/pytorch3d
-@CALL cd pytorch3d
-@CALL git checkout 2f11ddc5ee7d6bd56f2fb6744a16776fab6536f7
-@CALL cd ..
-
-@REM 克隆 simple-knn
-@echo 正在克隆 simple-knn...
-@CALL git clone https://github.com/camenduru/simple-knn
-
-@REM 确保目录存在
-@CALL if not exist "diff_gaussian_rasterization_hair\third_party" mkdir -p "diff_gaussian_rasterization_hair\third_party"
-
-@REM 克隆 diff_gaussian_rasterization_hair 的 glm 子模块
-@echo 正在克隆 glm...
-@CALL git clone https://github.com/g-truc/glm diff_gaussian_rasterization_hair\third_party\glm
-@CALL cd diff_gaussian_rasterization_hair\third_party\glm
-@CALL git checkout 5c46b9c07008ae65cb81ab79cd677ecc1934b903
-@CALL cd "%PROJECT_DIR%\ext"
-
-@REM 克隆 kaolin 并切换至v0.15.0
-@echo 正在克隆 kaolin...
-@CALL git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
-@CALL cd kaolin
-@CALL git checkout v0.15.0
-@CALL cd ..
-
-@REM 克隆 hyperIQA
-@echo 正在克隆 hyperIQA...
-@CALL git clone https://github.com/SSL92/hyperIQA
-
-@REM 克隆 PIXIE
-@echo 正在克隆 PIXIE...
-@CALL git clone https://github.com/Jeffreytsai1004/PIXIE
-
-@CALL cd "%PROJECT_DIR%"
-@echo 代码和依赖库克隆完成
-
-@echo.
-@echo ====== 下载预训练模型 ======
-
-@echo 正在下载 NeuralHaircut 模型...
-@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut"
-@CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown --folder https://drive.google.com/drive/folders/1TCdJ0CKR3Q6LviovndOkJaKm8S1T9F_8
-@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut\pretrained_models\diffusion_prior"
-@CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1_9EOUXHayKiGH5nkrayncln3d6m1uV7f
-@CALL cd "%PROJECT_DIR%\ext\NeuralHaircut\PIXIE"
-@CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1mPcGu62YPc4MdkT8FFiOCP629xsENHZf
-@CALL tar -xvzf pixie_data.tar.gz
-@CALL del pixie_data.tar.gz
-@CALL cd "%PROJECT_DIR%\ext\hyperIQA"
-@CALL if not exist pretrained mkdir pretrained
-@CALL cd "%PROJECT_DIR%\ext\hyperIQA\pretrained"
-@CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1OOUmnbvpGea0LIGpIWEbOyxfWx6UCiiE
-@CALL cd "%PROJECT_DIR%"
-
-@echo.
-@echo ===== 安装 Matte-Anything =====
-
-@echo 正在安装 Matte-Anything 依赖...
+@echo 激活 matte_anything 环境...
 @CALL "%~dp0condabin\micromamba.bat" activate matte_anything
-@REM 安装 segment-anything, detectron2 和 GroundingDINO
-@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\segment-anything"
-@CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\detectron2"
-@CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%\ext\Matte-Anything\GroundingDINO"
-@CALL pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
-@CALL cd "%PROJECT_DIR%\ext\Matte-Anything"
-@CALL pip install supervision==0.22.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+@CALL cd %PROJECT_DIR%\ext\Matte-Anything\segment-anything
+@CALL pip install -e .
+@CALL cd %PROJECT_DIR%\ext\Matte-Anything\detectron2
+@CALL pip install -e .
+@CALL cd %PROJECT_DIR%\ext\Matte-Anything\GroundingDINO
+@CALL pip install -e .
+@CALL pip install supervision==0.22.0
 
-@REM 下载模型文件
-@echo 正在下载 Matte-Anything 模型...
-@CALL if not exist pretrained mkdir pretrained
+@echo 下载 Matte-Anything 模型...
+@CALL cd %PROJECT_DIR%\ext\Matte-Anything
+@CALL mkdir pretrained
 @CALL cd pretrained
 @CALL powershell -Command "Invoke-WebRequest -Uri 'https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth' -OutFile 'sam_vit_h_4b8939.pth'"
 @CALL powershell -Command "Invoke-WebRequest -Uri 'https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth' -OutFile 'groundingdino_swint_ogc.pth'"
-@CALL "%~dp0micromamba.exe" run -n openpose -r "%~dp0\" gdown 1d97oKuITCeWgai2Tf3iNilt6rMSSYzkW
+@CALL python -m gdown 1d97oKuITCeWgai2Tf3iNilt6rMSSYzkW
 
-@REM 下载openpose模型
-@echo 正在下载 OpenPose 模型...
-@CALL "%~dp0condabin\micromamba.bat" activate openpose
-@CALL cd "%PROJECT_DIR%\ext\openpose"
-@CALL powershell -Command "Invoke-WebRequest -Uri 'https://drive.google.com/uc?export=download&id=1Yn03cKKfVOq4qXmgBMQD20UMRRRkd_tV' -OutFile 'models.tar.gz'"
-@CALL tar -xvzf models.tar.gz
+@echo ===== 设置 OpenPose 环境 =====
+@CALL "%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair
+@CALL cd %PROJECT_DIR%\ext\openpose
+@CALL python -m gdown 1Yn03cKKfVOq4qXmgBMQD20UMRRRkd_tV
+@CALL tar -xzf models.tar.gz
 @CALL del models.tar.gz
 
-@REM 编译 openpose（需先使用 VS vcvarsall.bat）
-@echo 正在编译 OpenPose...
-@CALL cd "%PROJECT_DIR%\ext\openpose"
-@CALL IF EXIST "%VCVARS_DIR%\vcvarsall.bat" (
+@echo 创建 OpenPose 环境...
+@CALL "%~dp0micromamba.exe" create -n openpose cmake=3.20 -c conda-forge -r "%~dp0\" -y
+@CALL "%~dp0condabin\micromamba.bat" activate openpose
+
+@echo 编译 OpenPose (可能需要较长时间)...
+@CALL cd %PROJECT_DIR%\ext\openpose
+@CALL if not exist build mkdir build
+@CALL cd build
+
+@echo 配置 OpenPose CMake...
+@if exist "%VCVARS_DIR%\vcvarsall.bat" (
     @CALL "%VCVARS_DIR%\vcvarsall.bat" x64
-    @REM 确保CUDA可用
-    @CALL nvcc --version >nul 2>&1
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 警告: CUDA未正确安装或配置，请检查CUDA_DIR环境变量
-        @echo 当前CUDA_DIR设置为: %CUDA_DIR%
-        @echo 请确保CUDA 11.8已正确安装，并且PATH包含CUDA bin目录
-        @CALL pause
+    @CALL cmake .. -DBUILD_PYTHON=true -DUSE_CUDNN=OFF -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+    @if %ERRORLEVEL% NEQ 0 (
+        @CALL cmake .. -DBUILD_PYTHON=true -DUSE_CUDNN=OFF -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release
     )
-    @REM 编译Openpose
-    @CALL mkdir build
-    @CALL cd build
-    @CALL cmake .. -DBUILD_PYTHON=true -DUSE_CUDNN=OFF -G "Visual Studio 17 2022" -A x64
+    @echo 编译 OpenPose...
     @CALL cmake --build . --config Release
-    @CALL IF %ERRORLEVEL% NEQ 0 (
-        @echo 编译OpenPose失败，但将继续安装其他组件
-    )
-) ELSE (
-    @echo Visual Studio的vcvarsall.bat未找到，跳过编译OpenPose
-    @echo 请检查Visual Studio的安装路径，并手动编译OpenPose
-)
-
-@REM 安装PIXIE模型
-@echo 正在安装 PIXIE 模型...
-@CALL "%~dp0condabin\micromamba.bat" activate pixie
-@REM 下载PIXIE模型
-@CALL cd "%PROJECT_DIR%\ext\PIXIE"
-@CALL if exist fetch_model.bat (
-    @CALL fetch_model.bat
 ) else (
-    @echo PIXIE模型下载脚本不存在，创建下载脚本...
-    (
-        @echo @echo off
-        @echo powershell -Command "Invoke-WebRequest -Uri 'https://pixie.is.tue.mpg.de/media/uploads/pixie/pixie_model.tar' -OutFile 'pixie_model.tar'"
-        @echo powershell -Command "Invoke-WebRequest -Uri 'https://pixie.is.tue.mpg.de/media/uploads/pixie/pixie_data.tar' -OutFile 'pixie_data.tar'"
-        @echo tar -xf pixie_model.tar
-        @echo tar -xf pixie_data.tar
-        @echo del pixie_model.tar
-        @echo del pixie_data.tar
-    ) > fetch_model.bat
-    @CALL fetch_model.bat
+    @echo 警告: 未找到Visual Studio的vcvarsall.bat，跳过编译OpenPose
 )
 
-@REM 切换回主环境，安装本地依赖
-@echo 正在切换回主环境，安装本地依赖...
+@echo ===== 创建 PIXIE 环境 =====
+@CALL cd %PROJECT_DIR%
+@CALL "%~dp0micromamba.exe" create -n pixie -c pytorch -c nvidia -c fvcore -c conda-forge -c pytorch3d ^
+    python=3.8 pytorch=2.0.0 torchvision=0.15.0 torchaudio=2.0.0 pytorch-cuda=11.8 fvcore pytorch3d=0.7.5 kornia matplotlib pyyaml==5.4.1 -r "%~dp0\" -y
+
+@echo 激活 PIXIE 环境...
+@CALL "%~dp0condabin\micromamba.bat" activate pixie
+@CALL pip install gdown face-alignment
+@CALL cd %PROJECT_DIR%\ext\PIXIE
+@CALL powershell -Command "Invoke-WebRequest -Uri 'https://pixie.is.tue.mpg.de/media/uploads/pixie/pixie_model.tar' -OutFile 'pixie_model.tar'"
+@CALL powershell -Command "Invoke-WebRequest -Uri 'https://pixie.is.tue.mpg.de/media/uploads/pixie/pixie_data.tar' -OutFile 'pixie_data.tar'"
+@CALL tar -xf pixie_model.tar
+@CALL tar -xf pixie_data.tar
+@CALL del pixie_model.tar
+@CALL del pixie_data.tar
+
+@echo ===== 安装本地依赖 =====
 @CALL "%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair
+@CALL cd %PROJECT_DIR%
 
-@echo.
-@echo ========= 安装本地依赖 =========
+@echo 安装 pytorch3d...
+@CALL pip install -e ext/pytorch3d
 
-@echo 正在安装 pytorch3d...
-@CALL cd "%PROJECT_DIR%"
-@CALL pip install -e ext/pytorch3d -i https://pypi.tuna.tsinghua.edu.cn/simple
+@echo 安装 NeuralHaircut/npbgpp...
+@CALL pip install -e ext/NeuralHaircut/npbgpp
 
-@echo 正在安装 NeuralHaircut/npbgpp...
-@CALL pip install -e ext/NeuralHaircut/npbgpp -i https://pypi.tuna.tsinghua.edu.cn/simple
+@echo 安装 simple-knn...
+@CALL pip install -e ext/simple-knn
 
-@echo 正在安装 simple-knn...
-@CALL pip install -e ext/simple-knn -i https://pypi.tuna.tsinghua.edu.cn/simple
+@echo 安装 diff_gaussian_rasterization_hair...
+@CALL pip install -e ext/diff_gaussian_rasterization_hair
 
-@echo 正在安装 diff_gaussian_rasterization_hair...
-@CALL pip install -e ext/diff_gaussian_rasterization_hair -i https://pypi.tuna.tsinghua.edu.cn/simple
+@echo 安装 kaolin...
+@CALL pip install -e ext/kaolin
 
-@echo 正在安装 kaolin...
-@CALL pip install -e ext/kaolin -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-@REM 创建简化的启动脚本
-@echo 创建快捷启动脚本...
+@echo ===== 创建启动脚本 =====
 @echo @CALL "%%~dp0micromamba.exe" shell init --shell cmd.exe --prefix "%%~dp0\" > start_gaussian_hair.bat
 @echo @CALL "%%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair >> start_gaussian_hair.bat
 @echo @CALL "%%~dp0run.bat" >> start_gaussian_hair.bat
 @echo @CALL pause >> start_gaussian_hair.bat
 
 @echo.
-@echo ==== 安装完成 ====
-@echo 1. 要激活环境并运行项目，请双击 start_gaussian_hair.bat
-@echo 2. 或者先运行 activate_gaussian_hair.bat 激活环境，然后运行 run.bat
-@echo 3. 如遇到问题，请参考 README.md 中的故障排除部分
-
+@echo ===== 安装完成 =====
+@echo 要运行项目，请双击 start_gaussian_hair.bat
 @CALL pause
 
-@REM 打开新的命令窗口以激活环境并准备运行
-@CALL cmd /k "%~dp0condabin\micromamba.bat" activate gaussian_splatting_hair
+
+
+
+
