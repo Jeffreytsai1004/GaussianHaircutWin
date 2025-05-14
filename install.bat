@@ -6,20 +6,38 @@
 @REM 清理可能存在的旧环境（防止文件占用问题）
 @echo 清理可能存在的旧环境...
 @CALL taskkill /f /im micromamba.exe 2>nul
+@CALL taskkill /f /im python.exe 2>nul
+@CALL taskkill /f /im pip.exe 2>nul
 
-@REM 设置必要的环境变量
+@REM 等待进程完全终止
+@timeout /t 2 >nul
+
+@REM 删除可能的锁文件
+@CALL del /f /q "%~dp0*.lock" 2>nul
+@CALL del /f /q "%~dp0envs\*.lock" 2>nul
+@CALL del /f /q "%~dp0pkgs\*.lock" 2>nul
+
+@REM 设置必要的环境变量(使用绝对路径)
 @CALL set PROJECT_DIR=%~dp0
-@CALL set MAMBA_ROOT_PREFIX=%~dp0
-@CALL set MAMBA_EXE=%~dp0micromamba.exe
-@CALL set PATH=%MAMBA_ROOT_PREFIX%\Library\bin;%MAMBA_ROOT_PREFIX%\Scripts;%MAMBA_ROOT_PREFIX%\condabin;%PATH%
-@CALL set GDOWN_CACHE=cache\gdown
-@CALL set TORCH_HOME=cache\torch
-@CALL set HF_HOME=cache\huggingface
+@CALL set MAMBA_ROOT_PREFIX=%PROJECT_DIR%
+@CALL set MAMBA_EXE=%PROJECT_DIR%micromamba.exe
+
+@REM 设置缓存目录（使用绝对路径）
+@CALL mkdir "%PROJECT_DIR%cache" 2>nul
+@CALL mkdir "%PROJECT_DIR%cache\gdown" 2>nul
+@CALL mkdir "%PROJECT_DIR%cache\torch" 2>nul
+@CALL mkdir "%PROJECT_DIR%cache\huggingface" 2>nul
+@CALL set GDOWN_CACHE=%PROJECT_DIR%cache\gdown
+@CALL set TORCH_HOME=%PROJECT_DIR%cache\torch
+@CALL set HF_HOME=%PROJECT_DIR%cache\huggingface
 @CALL set PYTHONDONTWRITEBYTECODE=1
+
 @REM 设置其他环境变量
 @CALL set DATA_PATH=%PROJECT_DIR%data
 @CALL set ENV_PATH=%PROJECT_DIR%envs
 @CALL set MAMBA=%PROJECT_DIR%micromamba.exe
+
+@REM 设置外部工具路径
 @CALL set CUDA_DIR=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 @CALL set BLENDER_DIR=C:\Program Files\Blender Foundation\Blender 3.6
 @CALL set COLMAP_DIR=C:\Colmap\bin
@@ -33,14 +51,15 @@
 @CALL rd /s /q "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
 @CALL rd /s /q "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
 @CALL rd /s /q "%MAMBA_ROOT_PREFIX%condabin" 2>nul
-@CALL rd /s /q "%PROJECT_DIR%cache" 2>nul
 
 @REM 创建必要的目录结构
 @CALL mkdir "%MAMBA_ROOT_PREFIX%envs" 2>nul
+@CALL mkdir "%MAMBA_ROOT_PREFIX%Library" 2>nul
 @CALL mkdir "%MAMBA_ROOT_PREFIX%Library\bin" 2>nul
 @CALL mkdir "%MAMBA_ROOT_PREFIX%Scripts" 2>nul
 @CALL mkdir "%MAMBA_ROOT_PREFIX%condabin" 2>nul
-@CALL mkdir "%PROJECT_DIR%\data" 2>nul
+@CALL mkdir "%PROJECT_DIR%ext" 2>nul
+@CALL mkdir "%PROJECT_DIR%data" 2>nul
 
 @echo.
 @echo ==== 创建主环境 ====
